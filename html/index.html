@@ -1950,6 +1950,7 @@ function bindEvents() {
 //  INIT
 // ════════════════════════════════════════════════════════════════
 function initApp() {
+function initApp() {
   loadStateFromStorage();
   buildFilterUI();
   bindEvents();
@@ -1962,15 +1963,14 @@ function initApp() {
 <script>
   const pb = new PocketBase('https://onrender.com');
 
-  // Функція, яка знайде твої поля на сайті, забере дані та відправить у базу
+  // Оновлена функція, яка сама знайде поля та кнопку
   async function registerUser() {
-    // Шукаємо твою пошту та пароль (використовуємо твої ID: user-email та user-pass)
     const emailInput = document.getElementById('user-email');
     const passwordInput = document.getElementById('user-pass');
     const msg = document.getElementById('reg-msg');
 
     if (!emailInput || !passwordInput) {
-      alert("Помилка: на сторінці не знайдено полей з ID 'user-email' або 'user-pass'!");
+      alert("Помилка: на сторінці не знайдено полей 'user-email' або 'user-pass'!");
       return;
     }
 
@@ -1996,7 +1996,19 @@ function initApp() {
       else alert('Помилка: ' + error.message);
     }
   }
+
+  // ЦЕЙ ХИТРИЙ РЯДОК САМ ЗНАЙДЕ ТВОЮ КНОПКУ ТА ОЖИВИТЬ ЇЇ
+  document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.querySelector(".btn--primary");
+    if (btn) {
+      btn.addEventListener("click", registerUser);
+    }
+  });
 </script>
+
+</body>
+</html>
+
 
 </body>
 </html>
