@@ -1958,35 +1958,5 @@ function initApp() {
   renderProgressPanel();
 }
 </script>
-<script src="https://jsdelivr.net"></script>
-<script>
-  const pb = new PocketBase('https://onrender.com');
-
-  async function registerUser() {
-    const email = document.getElementById('user-email').value;
-    const password = document.getElementById('user-pass').value;
-    const msg = document.getElementById('reg-msg');
-
-    if (!email || password.length < 8) {
-      msg.style.color = 'var(--incorrect)';
-      msg.textContent = 'Введіть пошту та пароль від 8 символів!';
-      return;
-    }
-
-    try {
-      await pb.collection('users').create({
-        email: email,
-        password: password,
-        passwordConfirm: password,
-      });
-      msg.style.color = 'var(--correct)';
-      msg.textContent = 'Акаунт успішно створено! 🎉';
-    } catch (error) {
-      msg.style.color = 'var(--incorrect)';
-      msg.textContent = 'Помилка: ' + error.message;
-    }
-  }
-</script>
-
 </body>
 </html>
