@@ -1962,7 +1962,6 @@ function initApp() {
 <script>
   const pb = new PocketBase('https://my-backend1-bk1d.onrender.com');
 
-  // Функція, яка автоматично створить акаунт у твоїй базі
   async function registerUser(email, password) {
     try {
       await pb.collection('users').create({
