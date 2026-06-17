@@ -1960,9 +1960,8 @@ function initApp() {
 </script>
 <script src="https://jsdelivr.net"></script>
 <script>
-  const pb = new PocketBase('https://my-backend1-bk1d.onrender.com');
+  const pb = new PocketBase('https://onrender.com');
 
-  // ЦЕЙ ХИТРИЙ КОД САМ СТВОРИТЬ КНОПКУ ТА ПОЛЯ НА ЕКРАНІ
   document.addEventListener("DOMContentLoaded", () => {
     const appDir = document.getElementById("app") || document.body;
     const regBlock = document.createElement("div");
@@ -1970,7 +1969,7 @@ function initApp() {
       <div style="background: #ffffff; padding: 20px; border: 2px solid #2563eb; border-radius: 10px; margin: 20px auto; max-width: 700px; text-align: center; font-family: system-ui, sans-serif;">
         <h3 style="margin-bottom: 10px; color: #111827;">Реєстрація акаунта</h3>
         <input type="email" id="user-email" placeholder="Твоя пошта" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #e5e7eb; border-radius: 6px; box-sizing: border-box;">
-        <input type="password" id="user-pass" placeholder="Пароль (від 8 символів)" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #e5e7eb; border-radius: 6px; box-sizing: border-box;">
+        <input type="password" id="user-pass" placeholder="Пароль (від 8 symbols)" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #e5e7eb; border-radius: 6px; box-sizing: border-box;">
         <button id="btn-submit-reg" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem;">Створити акаунт</button>
         <div id="reg-msg" style="margin-top: 12px; font-weight: 600; min-height: 20px;"></div>
       </div>
@@ -2015,6 +2014,7 @@ function initApp() {
 
 </body>
 </html>
+
 
 
 
