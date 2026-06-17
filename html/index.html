@@ -1950,7 +1950,6 @@ function bindEvents() {
 //  INIT
 // ════════════════════════════════════════════════════════════════
 function initApp() {
-function initApp() {
   loadStateFromStorage();
   buildFilterUI();
   bindEvents();
@@ -1963,7 +1962,6 @@ function initApp() {
 <script>
   const pb = new PocketBase('https://onrender.com');
 
-  // Оновлена функція, яка сама знайде поля та кнопку
   async function registerUser() {
     const emailInput = document.getElementById('user-email');
     const passwordInput = document.getElementById('user-pass');
@@ -1997,11 +1995,10 @@ function initApp() {
     }
   }
 
-  // ЦЕЙ ХИТРИЙ РЯДОК САМ ЗНАЙДЕ ТВОЮ КНОПКУ ТА ОЖИВИТЬ ЇЇ
-  document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.querySelector(".btn--primary");
-    if (btn) {
-      btn.addEventListener("click", registerUser);
+  // СЛУХАЄМО КЛІКИ НА ВСЬОМУ САЙТІ: ЯКЩО ЛЮДИНА ТИСНЕ КНОПКУ РЕЄСТРАЦІЇ — ВОНО СПРАЦЮЄ ЗО СТОПРОЦЕНТНОЮ ГАРАНТІЄЮ
+  document.addEventListener("click", (event) => {
+    if (event.target && event.target.classList.contains("btn--primary")) {
+      registerUser();
     }
   });
 </script>
@@ -2010,8 +2007,6 @@ function initApp() {
 </html>
 
 
-</body>
-</html>
 
 
 
