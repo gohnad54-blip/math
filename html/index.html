@@ -1960,24 +1960,35 @@ function initApp() {
 </script>
 <script src="https://jsdelivr.net"></script>
 <script>
-  const pb = new PocketBase('https://onrender.com');
+  const pb = new PocketBase('https://my-backend1-bk1d.onrender.com');
+
+  // ЦЕЙ ХИТРИЙ КОД САМ СТВОРИТЬ КНОПКУ ТА ПОЛЯ НА ЕКРАНІ
+  document.addEventListener("DOMContentLoaded", () => {
+    const appDir = document.getElementById("app") || document.body;
+    const regBlock = document.createElement("div");
+    regBlock.innerHTML = `
+      <div style="background: #ffffff; padding: 20px; border: 2px solid #2563eb; border-radius: 10px; margin: 20px auto; max-width: 700px; text-align: center; font-family: system-ui, sans-serif;">
+        <h3 style="margin-bottom: 10px; color: #111827;">Реєстрація акаунта</h3>
+        <input type="email" id="user-email" placeholder="Твоя пошта" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #e5e7eb; border-radius: 6px; box-sizing: border-box;">
+        <input type="password" id="user-pass" placeholder="Пароль (від 8 символів)" style="width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #e5e7eb; border-radius: 6px; box-sizing: border-box;">
+        <button id="btn-submit-reg" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 1rem;">Створити акаунт</button>
+        <div id="reg-msg" style="margin-top: 12px; font-weight: 600; min-height: 20px;"></div>
+      </div>
+    `;
+    appDir.prepend(regBlock);
+  });
 
   async function registerUser() {
     const emailInput = document.getElementById('user-email');
     const passwordInput = document.getElementById('user-pass');
     const msg = document.getElementById('reg-msg');
 
-    if (!emailInput || !passwordInput) {
-      alert("Помилка: на сторінці не знайдено полей 'user-email' або 'user-pass'!");
-      return;
-    }
-
     const email = emailInput.value;
     const password = passwordInput.value;
 
     if (!email || password.length < 8) {
-      if (msg) msg.textContent = 'Введіть пошту та пароль від 8 символів!';
-      else alert('Введіть пошту та пароль від 8 символів!');
+      msg.style.color = '#dc2626';
+      msg.textContent = 'Введіть пошту та пароль від 8 символів!';
       return;
     }
 
@@ -1987,17 +1998,16 @@ function initApp() {
         password: password,
         passwordConfirm: password,
       });
-      if (msg) msg.textContent = 'Акаунт успішно створено! 🎉';
-      else alert('Акаунт успішно створено! 🎉');
+      msg.style.color = '#16a34a';
+      msg.textContent = 'Акаунт успішно створено! 🎉';
     } catch (error) {
-      if (msg) msg.textContent = 'Помилка: ' + error.message;
-      else alert('Помилка: ' + error.message);
+      msg.style.color = '#dc2626';
+      msg.textContent = 'Помилка: ' + error.message;
     }
   }
 
-  // СЛУХАЄМО КЛІКИ НА ВСЬОМУ САЙТІ: ЯКЩО ЛЮДИНА ТИСНЕ КНОПКУ РЕЄСТРАЦІЇ — ВОНО СПРАЦЮЄ ЗО СТОПРОЦЕНТНОЮ ГАРАНТІЄЮ
   document.addEventListener("click", (event) => {
-    if (event.target && event.target.classList.contains("btn--primary")) {
+    if (event.target && event.target.id === "btn-submit-reg") {
       registerUser();
     }
   });
@@ -2005,6 +2015,7 @@ function initApp() {
 
 </body>
 </html>
+
 
 
 
