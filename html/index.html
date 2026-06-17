@@ -1960,24 +1960,47 @@ function initApp() {
 </script>
 <script src="https://jsdelivr.net"></script>
 <script>
-  const pb = new PocketBase('https://my-backend1-bk1d.onrender.com');
+  const pb = new PocketBase('https://onrender.com');
 
-  async function registerUser(email, password) {
+  // Функція, яка знайде твої поля на сайті, забере дані та відправить у базу
+  async function registerUser() {
+    // Шукаємо твою пошту та пароль (використовуємо твої ID: user-email та user-pass)
+    const emailInput = document.getElementById('user-email');
+    const passwordInput = document.getElementById('user-pass');
+    const msg = document.getElementById('reg-msg');
+
+    if (!emailInput || !passwordInput) {
+      alert("Помилка: на сторінці не знайдено полей з ID 'user-email' або 'user-pass'!");
+      return;
+    }
+
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    if (!email || password.length < 8) {
+      if (msg) msg.textContent = 'Введіть пошту та пароль від 8 символів!';
+      else alert('Введіть пошту та пароль від 8 символів!');
+      return;
+    }
+
     try {
       await pb.collection('users').create({
         email: email,
         password: password,
         passwordConfirm: password,
       });
-      alert('Акаунт успішно створено! 🎉');
+      if (msg) msg.textContent = 'Акаунт успішно створено! 🎉';
+      else alert('Акаунт успішно створено! 🎉');
     } catch (error) {
-      alert('Помилка реєстрації: ' + error.message);
+      if (msg) msg.textContent = 'Помилка: ' + error.message;
+      else alert('Помилка: ' + error.message);
     }
   }
 </script>
 
 </body>
 </html>
+
 
 
 
