@@ -1,0 +1,20 @@
+services:
+  pb:
+    image: augustodelg/pocketbase:latest   # <--- Цей образ лежить на Docker Hub і працює без авторизації
+    ports:
+      - "8090:8090"
+    volumes:
+      - pb_data:/pb_data
+
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+
+volumes:
+  pb_data:
+
+
+

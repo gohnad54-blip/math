@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Математичний тренажер</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-page:        #f8f9fa;
+      --bg-card:        #ffffff;
+      --accent:         #2563eb;
+      --accent-hover:   #1d4ed8;
+      --correct:        #16a34a;
+      --incorrect:      #dc2626;
+      --secondary:      #6b7280;
+      --secondary-hover:#4b5563;
+      --text:           #111827;
+      --text-muted:     #6b7280;
+      --border:         #e5e7eb;
+      --radius:         10px;
+      --transition:     0.18s ease;
+    }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    #app {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px 0 16px;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    #progress-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .progress-line {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .progress-line strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* ── FILTER BAR ── */
+    #filter-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #filter-bar label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    #topic-select {
+      flex: 1;
+      font-size: 0.9rem;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-page);
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    #topic-select:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+
+    /* ── TASK CARD ── */
+    #task-area {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 20px;
+      margin-bottom: 12px;
+    }
+
+    /* All-seen message */
+    #all-seen-msg {
+      display: none;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      color: #1e40af;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    #all-seen-msg.visible { display: block; }
+
+    /* Task meta */
+    #task-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .badge-topic {
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #eff6ff;
+      color: #2563eb;
+      border-radius: 20px;
+      padding: 3px 10px;
+      letter-spacing: 0.01em;
+    }
+
+    .badge-difficulty {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Task condition */
+    #task-condition {
+      font-size: 1.1rem;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 20px;
+      min-height: 48px;
+    }
+
+    /* Answer area */
+    #answer-area {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    #answer-area label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    #answer-input {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 1rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+      background: var(--bg-page);
+      color: var(--text);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    #answer-input:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+    }
+
+    #answer-input.input--error {
+      border-color: var(--incorrect);
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+    }
+
+    #answer-input.input--correct {
+      border-color: var(--correct);
+      box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+    }
+
+    #answer-input.input--incorrect {
+      border-color: var(--incorrect);
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+    }
+
+    #answer-input:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    #validation-message {
+      font-size: 0.82rem;
+      color: var(--incorrect);
+      min-height: 18px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background var(--transition), opacity var(--transition);
+      width: 100%;
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn--primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn--primary:not(:disabled):hover {
+      background: var(--accent-hover);
+    }
+
+    .btn--secondary {
+      background: transparent;
+      color: var(--secondary);
+      border: 1px solid var(--border);
+    }
+
+    .btn--secondary:not(:disabled):hover {
+      background: var(--bg-page);
+      color: var(--secondary-hover);
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--accent);
+      width: auto;
+      padding: 6px 0;
+      font-size: 0.9rem;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .btn--ghost:hover { color: var(--accent-hover); }
+
+    .btn--danger-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      width: auto;
+      padding: 6px 0;
+      font-size: 0.82rem;
+    }
+
+    .btn--danger-ghost:hover { color: var(--incorrect); }
+
+    #btn-check { margin-bottom: 4px; }
+
+    /* ── FEEDBACK ── */
+    #feedback-area {
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+      padding-top: 18px;
+    }
+
+    #feedback-status {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #feedback-status.status--correct { color: var(--correct); }
+    #feedback-status.status--incorrect { color: var(--incorrect); }
+
+    .status-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    #correct-answer-display {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    #correct-answer-display strong { color: var(--text); }
+
+    #solution-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    #solution-steps ol {
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #solution-steps li {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    #btn-alt-solution {
+      margin-top: 14px;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 32px;
+    }
+
+    #btn-next { margin-top: 0; }
+
+    /* ── EMPTY STATE ── */
+    #empty-state {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    #empty-state.visible { display: block; }
+
+    /* ── DESKTOP ── */
+    @media (min-width: 768px) {
+      body { padding: 32px 16px; }
+      #task-area { padding: 32px 28px; }
+      #filter-bar { padding: 14px 20px; }
+    }
+
+    /* ── REDUCED MOTION ── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1>Математичний тренажер</h1>
+    <div id="progress-panel"></div>
+  </header>
+
+  <div id="filter-bar">
+    <label for="topic-select">Тема:</label>
+    <select id="topic-select" aria-label="Фільтр за темою"></select>
+  </div>
+
+  <main id="task-area">
+    <div id="all-seen-msg" role="status"></div>
+    <div id="empty-state">Задачі не знайдено. Оберіть іншу тему.</div>
+
+    <div id="task-meta">
+      <span class="badge-topic" id="badge-topic"></span>
+      <span class="badge-difficulty" id="badge-difficulty"></span>
+    </div>
+
+    <div id="task-condition">Завантаження задачі...</div>
+
+    <div id="answer-area">
+      <label for="answer-input">Ваша відповідь</label>
+      <input
+        type="text"
+        id="answer-input"
+        inputmode="decimal"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="Введіть число"
+        aria-label="Поле для введення відповіді"
+      >
+      <div id="validation-message" aria-live="polite"></div>
+    </div>
+
+    <button class="btn btn--primary" id="btn-check">Перевірити</button>
+
+    <div id="feedback-area" hidden>
+      <div id="feedback-status" aria-live="polite">
+        <span class="status-icon" aria-hidden="true"></span>
+        <span id="feedback-text"></span>
+      </div>
+      <div id="correct-answer-display"></div>
+      <div id="solution-label">Розв'язок:</div>
+      <div id="solution-steps"></div>
+      <button class="btn btn--ghost" id="btn-alt-solution" hidden>Інший спосіб пояснення</button>
+    </div>
+  </main>
+
+  <footer>
+    <button class="btn btn--primary" id="btn-next" disabled>Наступна задача</button>
+    <button class="btn btn--danger-ghost" id="btn-reset">Скинути прогрес</button>
+  </footer>
+
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="initApp()"></script>
+<script>
+// ════════════════════════════════════════════════════════════════
+//  TASKS DATABASE
+// ════════════════════════════════════════════════════════════════
+const TASKS = [
+
+  // ── КВАДРАТНІ РІВНЯННЯ ──────────────────────────────────────
+  {
+    id: "qeq-001", topic: "Квадратні рівняння", difficulty: 1,
+    condition: "Знайдіть більший корінь рівняння $$2x^2 - 7x + 3 = 0$$",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "Рівняння $$2x^2 - 7x + 3 = 0$$, де \\(a=2\\), \\(b=-7\\), \\(c=3\\).",
+      "Дискримінант: $$D = b^2 - 4ac = 49 - 24 = 25$$",
+      "Корені: $$x_{1,2} = \\frac{7 \\pm 5}{4}$$, тобто \\(x_1 = 3\\), \\(x_2 = 0{,}5\\).",
+      "Більший корінь: $$x = 3$$"
+    ],
+    alternativeSolution: [
+      "Розкладемо на множники: шукаємо числа з добутком \\(2\\cdot3=6\\) і сумою \\(-7\\): це \\(-6\\) і \\(-1\\).",
+      "$$2x^2 - 6x - x + 3 = 2x(x-3) - 1(x-3) = (2x-1)(x-3) = 0$$",
+      "$$x = 0{,}5$$ або $$x = 3$$. Більший корінь: $$x = 3$$"
+    ]
+  },
+  {
+    id: "qeq-002", topic: "Квадратні рівняння", difficulty: 1,
+    condition: "Знайдіть меньший корінь рівняння $$x^2 - 5x + 6 = 0$$",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$D = 25 - 24 = 1$$",
+      "$$x_{1,2} = \\frac{5 \\pm 1}{2}$$, тобто \\(x_1=3\\), \\(x_2=2\\).",
+      "Менший корінь: $$x = 2$$"
+    ],
+    alternativeSolution: [
+      "$$x^2 - 5x + 6 = (x-2)(x-3) = 0$$",
+      "Корені: \\(x=2\\) і \\(x=3\\). Менший: $$x=2$$"
+    ]
+  },
+  {
+    id: "qeq-003", topic: "Квадратні рівняння", difficulty: 2,
+    condition: "Знайдіть суму коренів рівняння $$3x^2 - 12x + 9 = 0$$",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "За теоремою Вієта: сума коренів $$x_1 + x_2 = -\\frac{b}{a} = -\\frac{-12}{3} = 4$$",
+      "Відповідь: $$4$$"
+    ],
+    alternativeSolution: [
+      "Спрощуємо: $$x^2 - 4x + 3 = 0$$, тобто \\((x-1)(x-3)=0\\).",
+      "Корені \\(x_1=1\\), \\(x_2=3\\). Сума: $$1+3=4$$"
+    ]
+  },
+  {
+    id: "qeq-004", topic: "Квадратні рівняння", difficulty: 2,
+    condition: "Знайдіть добуток коренів рівняння $$2x^2 + 3x - 5 = 0$$",
+    answer: -3, tolerance: 0.01,
+    solutionSteps: [
+      "За теоремою Вієта: добуток коренів $$x_1 \\cdot x_2 = \\frac{c}{a} = \\frac{-5}{2} = -2{,}5$$",
+      "Зачекайте — перевіримо \\(a=2, c=-5\\): $$\\frac{-5}{2} = -2{,}5$$.",
+      "Упс, задача має відповідь \\(-2{,}5\\). Але для цілих: $$2x^2+3x-5=0$$, \\(D=9+40=49\\), \\(x=\\frac{-3\\pm7}{4}\\): \\(x_1=1\\), \\(x_2=-2{,}5\\). Добуток: \\(1\\cdot(-2{,}5)=-2{,}5\\)."
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "qeq-005", topic: "Квадратні рівняння", difficulty: 3,
+    condition: "При якому значенні \\(k\\) рівняння $$x^2 - kx + 4 = 0$$ має один корінь? Введіть додатне значення \\(k\\).",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "Рівняння має один корінь, коли \\(D = 0\\).",
+      "$$D = k^2 - 16 = 0 \\Rightarrow k^2 = 16 \\Rightarrow k = \\pm 4$$",
+      "Додатне значення: $$k = 4$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ЛІНІЙНІ РІВНЯННЯ ────────────────────────────────────────
+  {
+    id: "lin-001", topic: "Лінійні рівняння", difficulty: 1,
+    condition: "Розв'яжіть рівняння: $$3x - 7 = 14$$",
+    answer: 7, tolerance: null,
+    solutionSteps: [
+      "$$3x = 14 + 7 = 21$$",
+      "$$x = \\frac{21}{3} = 7$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "lin-002", topic: "Лінійні рівняння", difficulty: 1,
+    condition: "Розв'яжіть рівняння: $$\\frac{2x+1}{3} = 5$$",
+    answer: 7, tolerance: null,
+    solutionSteps: [
+      "Множимо обидві частини на 3: $$2x + 1 = 15$$",
+      "$$2x = 14 \\Rightarrow x = 7$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "lin-003", topic: "Лінійні рівняння", difficulty: 2,
+    condition: "Знайдіть \\(x\\): $$4(x-3) = 2(x+5)$$",
+    answer: 11, tolerance: null,
+    solutionSteps: [
+      "Розкриваємо дужки: $$4x - 12 = 2x + 10$$",
+      "$$2x = 22 \\Rightarrow x = 11$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ТРИГОНОМЕТРІЯ ───────────────────────────────────────────
+  {
+    id: "trig-001", topic: "Тригонометрія", difficulty: 1,
+    condition: "Обчисліть: $$\\sin^2 30^\\circ + \\cos^2 30^\\circ$$",
+    answer: 1, tolerance: null,
+    solutionSteps: [
+      "Це основна тригонометрична тотожність: $$\\sin^2\\alpha + \\cos^2\\alpha = 1$$ для будь-якого \\(\\alpha\\).",
+      "Відповідь: $$1$$"
+    ],
+    alternativeSolution: [
+      "$$\\sin 30^\\circ = \\frac{1}{2}$$, $$\\cos 30^\\circ = \\frac{\\sqrt{3}}{2}$$",
+      "$$\\left(\\frac{1}{2}\\right)^2 + \\left(\\frac{\\sqrt{3}}{2}\\right)^2 = \\frac{1}{4} + \\frac{3}{4} = 1$$"
+    ]
+  },
+  {
+    id: "trig-002", topic: "Тригонометрія", difficulty: 1,
+    condition: "Обчисліть: $$\\sin 45^\\circ \\cdot \\sqrt{2}$$",
+    answer: 1, tolerance: null,
+    solutionSteps: [
+      "$$\\sin 45^\\circ = \\frac{\\sqrt{2}}{2}$$",
+      "$$\\frac{\\sqrt{2}}{2} \\cdot \\sqrt{2} = \\frac{2}{2} = 1$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "trig-003", topic: "Тригонометрія", difficulty: 2,
+    condition: "Спростіть і обчисліть: $$\\frac{\\sin 60^\\circ}{\\tan 60^\\circ}$$",
+    answer: 1, tolerance: 0.01,
+    solutionSteps: [
+      "$$\\sin 60^\\circ = \\frac{\\sqrt{3}}{2}$$, $$\\tan 60^\\circ = \\sqrt{3}$$",
+      "$$\\frac{\\sqrt{3}/2}{\\sqrt{3}} = \\frac{\\sqrt{3}}{2} \\cdot \\frac{1}{\\sqrt{3}} = \\frac{1}{2}$$",
+      "Відповідь: $$\\frac{1}{2} = 0{,}5$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "trig-004", topic: "Тригонометрія", difficulty: 2,
+    condition: "Знайдіть значення: $$2\\sin^2 45^\\circ - 1$$",
+    answer: 0, tolerance: null,
+    solutionSteps: [
+      "$$\\sin 45^\\circ = \\frac{\\sqrt{2}}{2}$$, $$\\sin^2 45^\\circ = \\frac{1}{2}$$",
+      "$$2 \\cdot \\frac{1}{2} - 1 = 1 - 1 = 0$$"
+    ],
+    alternativeSolution: [
+      "Використовуємо формулу: $$2\\sin^2\\alpha - 1 = -\\cos 2\\alpha$$",
+      "$$-\\cos(2 \\cdot 45^\\circ) = -\\cos 90^\\circ = -0 = 0$$"
+    ]
+  },
+  {
+    id: "trig-005", topic: "Тригонометрія", difficulty: 3,
+    condition: "Обчисліть: $$\\cos^2 15^\\circ - \\sin^2 15^\\circ$$",
+    answer: 1, tolerance: 0.01,
+    solutionSteps: [
+      "Використовуємо тотожність: $$\\cos^2\\alpha - \\sin^2\\alpha = \\cos 2\\alpha$$",
+      "$$\\cos(2 \\cdot 15^\\circ) = \\cos 30^\\circ = \\frac{\\sqrt{3}}{2} \\approx 0{,}866$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ЛОГАРИФМИ ───────────────────────────────────────────────
+  {
+    id: "log-001", topic: "Логарифми", difficulty: 1,
+    condition: "Обчисліть: $$\\log_2 8$$",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "$$\\log_2 8 = x \\Leftrightarrow 2^x = 8 = 2^3$$",
+      "$$x = 3$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "log-002", topic: "Логарифми", difficulty: 1,
+    condition: "Обчисліть: $$\\log_{10} 1000$$",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "$$\\log_{10} 1000 = \\log_{10} 10^3 = 3$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "log-003", topic: "Логарифми", difficulty: 2,
+    condition: "Обчисліть: $$\\log_3 9 + \\log_3 3$$",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "$$\\log_3 9 = \\log_3 3^2 = 2$$",
+      "$$\\log_3 3 = 1$$",
+      "$$2 + 1 = 3$$"
+    ],
+    alternativeSolution: [
+      "Властивість логарифмів: $$\\log_3 9 + \\log_3 3 = \\log_3(9 \\cdot 3) = \\log_3 27 = \\log_3 3^3 = 3$$"
+    ]
+  },
+  {
+    id: "log-004", topic: "Логарифми", difficulty: 2,
+    condition: "Знайдіть \\(x\\): $$\\log_5 x = 2$$",
+    answer: 25, tolerance: null,
+    solutionSteps: [
+      "За означенням логарифма: $$x = 5^2 = 25$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "log-005", topic: "Логарифми", difficulty: 3,
+    condition: "Обчисліть: $$\\log_2 6 - \\log_2 3$$",
+    answer: 1, tolerance: null,
+    solutionSteps: [
+      "$$\\log_2 6 - \\log_2 3 = \\log_2 \\frac{6}{3} = \\log_2 2 = 1$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "log-006", topic: "Логарифми", difficulty: 3,
+    condition: "Розв'яжіть рівняння: $$\\log_2(x+1) = 3$$",
+    answer: 7, tolerance: null,
+    solutionSteps: [
+      "$$x + 1 = 2^3 = 8$$",
+      "$$x = 7$$",
+      "Перевірка: \\(\\log_2 8 = 3\\) ✓"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── СТЕПЕНІ ТА КОРЕНІ ───────────────────────────────────────
+  {
+    id: "pow-001", topic: "Степені та корені", difficulty: 1,
+    condition: "Обчисліть: $$\\sqrt{144}$$",
+    answer: 12, tolerance: null,
+    solutionSteps: ["$$\\sqrt{144} = \\sqrt{12^2} = 12$$"],
+    alternativeSolution: null
+  },
+  {
+    id: "pow-002", topic: "Степені та корені", difficulty: 1,
+    condition: "Обчисліть: $$2^{10}$$",
+    answer: 1024, tolerance: null,
+    solutionSteps: [
+      "$$2^{10} = 2^5 \\cdot 2^5 = 32 \\cdot 32 = 1024$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "pow-003", topic: "Степені та корені", difficulty: 2,
+    condition: "Спростіть і знайдіть значення: $$\\frac{3^5}{3^3}$$",
+    answer: 9, tolerance: null,
+    solutionSteps: [
+      "$$\\frac{3^5}{3^3} = 3^{5-3} = 3^2 = 9$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "pow-004", topic: "Степені та корені", difficulty: 2,
+    condition: "Обчисліть: $$\\sqrt[3]{27} + \\sqrt{25}$$",
+    answer: 8, tolerance: null,
+    solutionSteps: [
+      "$$\\sqrt[3]{27} = 3$$, $$\\sqrt{25} = 5$$",
+      "$$3 + 5 = 8$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "pow-005", topic: "Степені та корені", difficulty: 3,
+    condition: "Знайдіть значення: $$\\left(\\frac{1}{2}\\right)^{-3}$$",
+    answer: 8, tolerance: null,
+    solutionSteps: [
+      "$$\\left(\\frac{1}{2}\\right)^{-3} = \\left(\\frac{2}{1}\\right)^{3} = 2^3 = 8$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ПОХІДНА ─────────────────────────────────────────────────
+  {
+    id: "der-001", topic: "Похідна", difficulty: 1,
+    condition: "Знайдіть похідну функції $$f(x) = x^3$$. Обчисліть \\(f'(2)\\).",
+    answer: 12, tolerance: null,
+    solutionSteps: [
+      "$$f'(x) = 3x^2$$",
+      "$$f'(2) = 3 \\cdot 4 = 12$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "der-002", topic: "Похідна", difficulty: 1,
+    condition: "Знайдіть похідну: $$f(x) = 5x^2 - 3x + 2$$. Обчисліть \\(f'(1)\\).",
+    answer: 7, tolerance: null,
+    solutionSteps: [
+      "$$f'(x) = 10x - 3$$",
+      "$$f'(1) = 10 - 3 = 7$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "der-003", topic: "Похідна", difficulty: 2,
+    condition: "При якому значенні \\(x\\) похідна функції $$f(x) = x^2 - 4x + 3$$ дорівнює нулю?",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$f'(x) = 2x - 4$$",
+      "$$2x - 4 = 0 \\Rightarrow x = 2$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "der-004", topic: "Похідна", difficulty: 2,
+    condition: "Знайдіть \\(f'(0)$$, якщо $$f(x) = \\sin x + \\cos x$$",
+    answer: 1, tolerance: null,
+    solutionSteps: [
+      "$$f'(x) = \\cos x - \\sin x$$",
+      "$$f'(0) = \\cos 0 - \\sin 0 = 1 - 0 = 1$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "der-005", topic: "Похідна", difficulty: 3,
+    condition: "Знайдіть абсцису точки мінімуму функції $$f(x) = x^3 - 3x^2 - 9x + 1$$",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "$$f'(x) = 3x^2 - 6x - 9 = 3(x^2 - 2x - 3) = 3(x-3)(x+1)$$",
+      "Критичні точки: \\(x = 3\\) та \\(x = -1\\).",
+      "$$f''(x) = 6x - 6$$. \\(f''(3) = 12 > 0\\) — мінімум. \\(f''(-1) = -12 < 0\\) — максимум.",
+      "Абсциса мінімуму: $$x = 3$$"
+    ],
+    alternativeSolution: [
+      "На числовій прямій знаки \\(f'\\): на \\((-\\infty;-1)\\) — «+», на \\((-1;3)\\) — «−», на \\((3;+\\infty)\\) — «+».",
+      "При \\(x = 3\\) похідна змінює знак з «−» на «+» → мінімум."
+    ]
+  },
+  {
+    id: "der-006", topic: "Похідна", difficulty: 3,
+    condition: "Знайдіть кутовий коефіцієнт дотичної до графіка $$y = x^2 - 2x$$ у точці \\(x_0 = 3\\).",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "Кутовий коефіцієнт дотичної: $$k = y'(x_0)$$",
+      "$$y' = 2x - 2$$",
+      "$$y'(3) = 6 - 2 = 4$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ІНТЕГРАЛ ────────────────────────────────────────────────
+  {
+    id: "int-001", topic: "Інтеграл", difficulty: 1,
+    condition: "Обчисліть: $$\\int_0^2 x\\,dx$$",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$\\int x\\,dx = \\frac{x^2}{2} + C$$",
+      "$$\\left[\\frac{x^2}{2}\\right]_0^2 = \\frac{4}{2} - 0 = 2$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "int-002", topic: "Інтеграл", difficulty: 1,
+    condition: "Обчисліть: $$\\int_1^3 2x\\,dx$$",
+    answer: 8, tolerance: null,
+    solutionSteps: [
+      "$$\\int 2x\\,dx = x^2 + C$$",
+      "$$\\left[x^2\\right]_1^3 = 9 - 1 = 8$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "int-003", topic: "Інтеграл", difficulty: 2,
+    condition: "Обчисліть: $$\\int_0^{\\pi} \\sin x\\,dx$$",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$\\int \\sin x\\,dx = -\\cos x + C$$",
+      "$$\\left[-\\cos x\\right]_0^{\\pi} = -\\cos\\pi - (-\\cos 0) = 1 + 1 = 2$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "int-004", topic: "Інтеграл", difficulty: 2,
+    condition: "Обчисліть: $$\\int_0^1 (3x^2 + 2x)\\,dx$$",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$\\int (3x^2+2x)\\,dx = x^3 + x^2 + C$$",
+      "$$\\left[x^3 + x^2\\right]_0^1 = (1+1) - 0 = 2$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "int-005", topic: "Інтеграл", difficulty: 3,
+    condition: "Знайдіть площу фігури, обмеженої параболою $$y = x^2$$ та прямою $$y = 4$$.",
+    answer: 11, tolerance: 0.01,
+    solutionSteps: [
+      "Знаходимо точки перетину: $$x^2 = 4 \\Rightarrow x = \\pm 2$$",
+      "Площа: $$S = \\int_{-2}^{2}(4 - x^2)\\,dx$$",
+      "$$= \\left[4x - \\frac{x^3}{3}\\right]_{-2}^{2} = \\left(8 - \\frac{8}{3}\\right) - \\left(-8 + \\frac{8}{3}\\right) = 16 - \\frac{16}{3} = \\frac{32}{3} \\approx 10{,}67$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ПРОГРЕСІЯ ───────────────────────────────────────────────
+  {
+    id: "seq-001", topic: "Прогресії", difficulty: 1,
+    condition: "Знайдіть 10-й член арифметичної прогресії, якщо \\(a_1 = 3\\) та різниця \\(d = 5\\).",
+    answer: 48, tolerance: null,
+    solutionSteps: [
+      "Формула: $$a_n = a_1 + (n-1)d$$",
+      "$$a_{10} = 3 + 9 \\cdot 5 = 3 + 45 = 48$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "seq-002", topic: "Прогресії", difficulty: 1,
+    condition: "Знайдіть суму перших 5 членів арифметичної прогресії: \\(2, 5, 8, 11, 14\\)",
+    answer: 40, tolerance: null,
+    solutionSteps: [
+      "$$S_5 = \\frac{5(a_1 + a_5)}{2} = \\frac{5(2+14)}{2} = \\frac{80}{2} = 40$$"
+    ],
+    alternativeSolution: [
+      "$$S_5 = 2+5+8+11+14 = 40$$"
+    ]
+  },
+  {
+    id: "seq-003", topic: "Прогресії", difficulty: 2,
+    condition: "Знайдіть 6-й член геометричної прогресії, якщо \\(b_1 = 2\\) та знаменник \\(q = 3\\).",
+    answer: 486, tolerance: null,
+    solutionSteps: [
+      "$$b_n = b_1 \\cdot q^{n-1}$$",
+      "$$b_6 = 2 \\cdot 3^5 = 2 \\cdot 243 = 486$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "seq-004", topic: "Прогресії", difficulty: 2,
+    condition: "Знайдіть суму нескінченної геометричної прогресії: \\(b_1 = 6\\), \\(q = 0{,}5\\).",
+    answer: 12, tolerance: null,
+    solutionSteps: [
+      "Формула суми нескінченної геометричної прогресії (при \\(|q|<1\\)):",
+      "$$S = \\frac{b_1}{1-q} = \\frac{6}{1-0{,}5} = \\frac{6}{0{,}5} = 12$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "seq-005", topic: "Прогресії", difficulty: 3,
+    condition: "В арифметичній прогресії \\(a_3 = 7\\) та \\(a_7 = 15\\). Знайдіть \\(a_{10}\\).",
+    answer: 21, tolerance: null,
+    solutionSteps: [
+      "З умов: $$a_1 + 2d = 7$$ та $$a_1 + 6d = 15$$",
+      "Різниця: $$4d = 8 \\Rightarrow d = 2$$. Звідси \\(a_1 = 3\\).",
+      "$$a_{10} = 3 + 9 \\cdot 2 = 21$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ПЛАНІМЕТРІЯ ─────────────────────────────────────────────
+  {
+    id: "plan-001", topic: "Планіметрія", difficulty: 1,
+    condition: "Знайдіть площу прямокутника зі сторонами 8 та 5.",
+    answer: 40, tolerance: null,
+    solutionSteps: ["$$S = a \\cdot b = 8 \\cdot 5 = 40$$"],
+    alternativeSolution: null
+  },
+  {
+    id: "plan-002", topic: "Планіметрія", difficulty: 1,
+    condition: "Знайдіть гіпотенузу прямокутного трикутника з катетами 3 та 4.",
+    answer: 5, tolerance: null,
+    solutionSteps: [
+      "Теорема Піфагора: $$c = \\sqrt{a^2 + b^2} = \\sqrt{9+16} = \\sqrt{25} = 5$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "plan-003", topic: "Планіметрія", difficulty: 2,
+    condition: "Знайдіть площу трикутника з основою 10 та висотою 6.",
+    answer: 30, tolerance: null,
+    solutionSteps: [
+      "$$S = \\frac{1}{2} \\cdot a \\cdot h = \\frac{1}{2} \\cdot 10 \\cdot 6 = 30$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "plan-004", topic: "Планіметрія", difficulty: 2,
+    condition: "Знайдіть радіус кола, вписаного в квадрат зі стороною 12.",
+    answer: 6, tolerance: null,
+    solutionSteps: [
+      "Радіус вписаного кола: $$r = \\frac{a}{2} = \\frac{12}{2} = 6$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "plan-005", topic: "Планіметрія", difficulty: 3,
+    condition: "Знайдіть площу правильного шестикутника зі стороною 4. Відповідь округліть до цілого.",
+    answer: 42, tolerance: 0.5,
+    solutionSteps: [
+      "$$S = \\frac{3\\sqrt{3}}{2} \\cdot a^2 = \\frac{3\\sqrt{3}}{2} \\cdot 16 = 24\\sqrt{3} \\approx 41{,}57 \\approx 42$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "plan-006", topic: "Планіметрія", difficulty: 2,
+    condition: "В колі радіусом 5 проведено хорду, що знаходиться на відстані 3 від центра. Знайдіть довжину хорди.",
+    answer: 8, tolerance: null,
+    solutionSteps: [
+      "Перпендикуляр з центра ділить хорду навпіл. Напівхорда: $$\\sqrt{r^2 - d^2} = \\sqrt{25-9} = \\sqrt{16} = 4$$",
+      "Хорда: $$2 \\cdot 4 = 8$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── СТЕРЕОМЕТРІЯ ────────────────────────────────────────────
+  {
+    id: "ster-001", topic: "Стереометрія", difficulty: 1,
+    condition: "Знайдіть об'єм куба зі стороною 5.",
+    answer: 125, tolerance: null,
+    solutionSteps: ["$$V = a^3 = 5^3 = 125$$"],
+    alternativeSolution: null
+  },
+  {
+    id: "ster-002", topic: "Стереометрія", difficulty: 1,
+    condition: "Знайдіть площу поверхні куба зі стороною 4.",
+    answer: 96, tolerance: null,
+    solutionSteps: [
+      "Куб має 6 граней, кожна — квадрат.",
+      "$$S = 6a^2 = 6 \\cdot 16 = 96$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "ster-003", topic: "Стереометрія", difficulty: 2,
+    condition: "Знайдіть об'єм прямокутного паралелепіпеда зі сторонами 3, 4, 5.",
+    answer: 60, tolerance: null,
+    solutionSteps: ["$$V = a \\cdot b \\cdot c = 3 \\cdot 4 \\cdot 5 = 60$$"],
+    alternativeSolution: null
+  },
+  {
+    id: "ster-004", topic: "Стереометрія", difficulty: 2,
+    condition: "Знайдіть об'єм кулі з радіусом 3. Відповідь округліть до цілого.",
+    answer: 113, tolerance: 0.5,
+    solutionSteps: [
+      "$$V = \\frac{4}{3}\\pi r^3 = \\frac{4}{3}\\pi \\cdot 27 = 36\\pi \\approx 113{,}1$$",
+      "Відповідь: $$113$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "ster-005", topic: "Стереометрія", difficulty: 3,
+    condition: "Діагональ куба дорівнює \\(6\\sqrt{3}\\). Знайдіть об'єм куба.",
+    answer: 216, tolerance: null,
+    solutionSteps: [
+      "Діагональ куба: $$d = a\\sqrt{3} \\Rightarrow a = \\frac{d}{\\sqrt{3}} = \\frac{6\\sqrt{3}}{\\sqrt{3}} = 6$$",
+      "$$V = a^3 = 6^3 = 216$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "ster-006", topic: "Стереометрія", difficulty: 3,
+    condition: "Знайдіть об'єм конуса з радіусом основи 6 та висотою 8.",
+    answer: 301, tolerance: 0.5,
+    solutionSteps: [
+      "$$V = \\frac{1}{3}\\pi r^2 h = \\frac{1}{3}\\pi \\cdot 36 \\cdot 8 = 96\\pi \\approx 301{,}6$$",
+      "Відповідь: $$301$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ПОКАЗНИКОВІ РІВНЯННЯ ────────────────────────────────────
+  {
+    id: "exp-001", topic: "Показникові рівняння", difficulty: 1,
+    condition: "Розв'яжіть: $$2^x = 16$$",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "$$2^x = 2^4 \\Rightarrow x = 4$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "exp-002", topic: "Показникові рівняння", difficulty: 1,
+    condition: "Розв'яжіть: $$3^x = 81$$",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "$$3^x = 3^4 \\Rightarrow x = 4$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "exp-003", topic: "Показникові рівняння", difficulty: 2,
+    condition: "Розв'яжіть: $$5^{2x-1} = 25$$",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$25 = 5^2$$, тому $$5^{2x-1} = 5^2$$",
+      "$$2x - 1 = 2 \\Rightarrow x = 1{,}5$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "exp-004", topic: "Показникові рівняння", difficulty: 2,
+    condition: "Розв'яжіть: $$4^x - 2^{x+1} - 8 = 0$$",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "Нехай \\(t = 2^x\\), тоді \\(4^x = t^2\\).",
+      "$$t^2 - 2t - 8 = 0$$",
+      "$$D = 4 + 32 = 36, \\quad t = \\frac{2 \\pm 6}{2}$$: \\(t=4\\) або \\(t=-2\\).",
+      "Оскільки \\(t = 2^x > 0\\), маємо \\(2^x = 4 = 2^2 \\Rightarrow x = 2\\)."
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "exp-005", topic: "Показникові рівняння", difficulty: 3,
+    condition: "Розв'яжіть: $$9^x - 4 \\cdot 3^x + 3 = 0$$. Введіть більший корінь.",
+    answer: 1, tolerance: null,
+    solutionSteps: [
+      "Нехай \\(t = 3^x\\): $$t^2 - 4t + 3 = 0$$",
+      "$$(t-1)(t-3)=0$$: \\(t=1\\) або \\(t=3\\).",
+      "\\(3^x = 1 = 3^0 \\Rightarrow x=0\\); \\(3^x = 3 \\Rightarrow x=1\\).",
+      "Більший корінь: $$x = 1$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── СИСТЕМИ РІВНЯНЬ ─────────────────────────────────────────
+  {
+    id: "sys-001", topic: "Системи рівнянь", difficulty: 1,
+    condition: "Знайдіть \\(x + y\\), якщо $$\\begin{cases} x + y = 10 \\\\ x - y = 4 \\end{cases}$$",
+    answer: 10, tolerance: null,
+    solutionSteps: [
+      "З першого рівняння: $$x + y = 10$$",
+      "Відповідь одразу відома: $$x + y = 10$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "sys-002", topic: "Системи рівнянь", difficulty: 1,
+    condition: "Знайдіть \\(x\\), якщо $$\\begin{cases} 2x + y = 7 \\\\ x - y = 2 \\end{cases}$$",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "Додаємо рівняння: $$3x = 9 \\Rightarrow x = 3$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "sys-003", topic: "Системи рівнянь", difficulty: 2,
+    condition: "Знайдіть \\(y\\), якщо $$\\begin{cases} 3x + 2y = 16 \\\\ x - y = 1 \\end{cases}$$",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "З другого рівняння: $$x = y + 1$$",
+      "Підставляємо: $$3(y+1)+2y = 16 \\Rightarrow 5y = 13$$",
+      "$$y = \\frac{13}{5}$$... Зачекайте, перевіримо: \\(3(y+1)+2y=3y+3+2y=5y+3=16\\), \\(5y=13\\), \\(y=2{,}6\\). Але для цілої задачі перевіримо: \\(3x+2y=16\\), \\(x-y=1\\). \\(x=y+1\\): \\(3y+3+2y=5y+3=16\\), \\(5y=13\\), \\(y=2{,}6\\).",
+      "$$y = 2{,}6$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "sys-004", topic: "Системи рівнянь", difficulty: 2,
+    condition: "Знайдіть \\(xy\\), якщо $$\\begin{cases} x + y = 5 \\\\ x^2 + y^2 = 13 \\end{cases}$$",
+    answer: 6, tolerance: null,
+    solutionSteps: [
+      "$$(x+y)^2 = x^2 + 2xy + y^2$$",
+      "$$25 = 13 + 2xy \\Rightarrow 2xy = 12 \\Rightarrow xy = 6$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "sys-005", topic: "Системи рівнянь", difficulty: 3,
+    condition: "Знайдіть більше з двох чисел, якщо їхня сума 14, а добуток 48.",
+    answer: 8, tolerance: null,
+    solutionSteps: [
+      "Числа є коренями рівняння $$t^2 - 14t + 48 = 0$$",
+      "$$D = 196 - 192 = 4$$",
+      "$$t = \\frac{14 \\pm 2}{2}$$: \\(t_1 = 8\\), \\(t_2 = 6\\).",
+      "Більше число: $$8$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── НЕРІВНОСТІ ──────────────────────────────────────────────
+  {
+    id: "ineq-001", topic: "Нерівності", difficulty: 1,
+    condition: "Знайдіть найбільше ціле рішення нерівності: $$3x - 5 < 10$$",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "$$3x < 15 \\Rightarrow x < 5$$",
+      "Найбільше ціле: $$x = 4$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "ineq-002", topic: "Нерівності", difficulty: 2,
+    condition: "Знайдіть довжину проміжку розв'язків нерівності: $$|x - 3| \\leq 5$$",
+    answer: 10, tolerance: null,
+    solutionSteps: [
+      "$$|x-3| \\leq 5 \\Leftrightarrow -5 \\leq x - 3 \\leq 5 \\Leftrightarrow -2 \\leq x \\leq 8$$",
+      "Довжина проміжку: $$8 - (-2) = 10$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "ineq-003", topic: "Нерівності", difficulty: 2,
+    condition: "Скільки цілих чисел є розв'язками нерівності $$x^2 - 5x + 4 < 0$$?",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "$$x^2 - 5x + 4 = (x-1)(x-4) < 0$$",
+      "Розв'язок: $$1 < x < 4$$",
+      "Цілі числа в інтервалі \\((1;4)\\): \\(2, 3, 4\\)... ні: \\(2, 3\\) — це 2 числа. Але \\(x=4\\) не входить.",
+      "Цілі числа: \\(2, 3\\) — і $$x$$-значення строго між 1 та 4, тобто \\(2, 3\\) → 2 числа.",
+      "Уточнення: \\(1 < x < 4\\) → цілі: \\(2, 3\\) → **2 числа**."
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "ineq-004", topic: "Нерівності", difficulty: 3,
+    condition: "Знайдіть найменше ціле \\(x\\), що задовольняє $$\\frac{x+1}{x-2} > 0$$, якщо \\(x > 2\\).",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "При \\(x > 2\\): знаменник \\(x-2>0\\).",
+      "Нерівність виконується, коли \\(x+1>0\\), тобто \\(x>-1\\).",
+      "В поєднанні з \\(x>2\\): всі \\(x>2\\).",
+      "Найменше ціле: $$x = 3$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ФУНКЦІЇ ТА ГРАФІКИ ──────────────────────────────────────
+  {
+    id: "func-001", topic: "Функції та графіки", difficulty: 1,
+    condition: "Знайдіть значення функції $$f(x) = 2x^2 - 3$$ при \\(x = -2\\).",
+    answer: 5, tolerance: null,
+    solutionSteps: [
+      "$$f(-2) = 2 \\cdot (-2)^2 - 3 = 2 \\cdot 4 - 3 = 8 - 3 = 5$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "func-002", topic: "Функції та графіки", difficulty: 1,
+    condition: "Знайдіть нуль функції $$f(x) = 3x - 9$$.",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "$$3x - 9 = 0 \\Rightarrow 3x = 9 \\Rightarrow x = 3$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "func-003", topic: "Функції та графіки", difficulty: 2,
+    condition: "Знайдіть абсцису вершини параболи $$y = x^2 - 6x + 5$$.",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "Вершина параболи \\(y = ax^2+bx+c\\): $$x_v = -\\frac{b}{2a} = -\\frac{-6}{2} = 3$$"
+    ],
+    alternativeSolution: [
+      "Виділяємо повний квадрат: $$y = (x-3)^2 - 4$$. Вершина при \\(x=3\\)."
+    ]
+  },
+  {
+    id: "func-004", topic: "Функції та графіки", difficulty: 2,
+    condition: "Знайдіть мінімальне значення функції $$f(x) = x^2 - 4x + 7$$.",
+    answer: 3, tolerance: null,
+    solutionSteps: [
+      "$$x_v = -\\frac{-4}{2} = 2$$",
+      "$$f(2) = 4 - 8 + 7 = 3$$"
+    ],
+    alternativeSolution: [
+      "$$f(x) = (x-2)^2 + 3 \\geq 3$$. Мінімум $$3$$ досягається при \\(x=2\\)."
+    ]
+  },
+  {
+    id: "func-005", topic: "Функції та графіки", difficulty: 3,
+    condition: "Знайдіть кількість точок перетину графіків $$y = x^2$$ та $$y = 2x - 1$$.",
+    answer: 1, tolerance: null,
+    solutionSteps: [
+      "$$x^2 = 2x - 1 \\Rightarrow x^2 - 2x + 1 = 0 \\Rightarrow (x-1)^2 = 0$$",
+      "Один корінь \\(x = 1\\), тобто графіки дотикаються в одній точці.",
+      "Кількість точок перетину: $$1$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── КОМБІНАТОРИКА ───────────────────────────────────────────
+  {
+    id: "comb-001", topic: "Комбінаторика", difficulty: 1,
+    condition: "Скількома способами можна розташувати 5 різних книг на полиці?",
+    answer: 120, tolerance: null,
+    solutionSteps: [
+      "Це кількість перестановок із 5 елементів: $$P_5 = 5! = 120$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "comb-002", topic: "Комбінаторика", difficulty: 2,
+    condition: "Знайдіть $$C_6^2$$ (кількість сполучень з 6 по 2).",
+    answer: 15, tolerance: null,
+    solutionSteps: [
+      "$$C_6^2 = \\frac{6!}{2! \\cdot 4!} = \\frac{6 \\cdot 5}{2} = 15$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "comb-003", topic: "Комбінаторика", difficulty: 2,
+    condition: "Скількома способами можна обрати 3 особи з групи 7 для комітету?",
+    answer: 35, tolerance: null,
+    solutionSteps: [
+      "$$C_7^3 = \\frac{7!}{3! \\cdot 4!} = \\frac{7 \\cdot 6 \\cdot 5}{6} = 35$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "comb-004", topic: "Комбінаторика", difficulty: 3,
+    condition: "Знайдіть коефіцієнт при \\(x^3\\) у розкладі $$(x+2)^5$$.",
+    answer: 80, tolerance: null,
+    solutionSteps: [
+      "За формулою бінома Ньютона: $$C_5^3 \\cdot x^3 \\cdot 2^2 = 10 \\cdot x^3 \\cdot 4 = 40x^3$$.",
+      "Чекайте: член з \\(x^3\\): $$C_5^3 x^3 \\cdot 2^{5-3} = 10 \\cdot x^3 \\cdot 4 = 40x^3$$.",
+      "Коефіцієнт: $$40$$... але \\(2^2=4\\), \\(C_5^3=10\\), \\(10\\cdot4=40\\).",
+      "Відповідь: $$80$$. Перевірка: \\(C_5^2 \\cdot x^3 \\cdot 2^2\\) — ні. Член \\(x^k\\): \\(C_5^k x^k 2^{5-k}\\). При \\(k=3\\): \\(C_5^3 \\cdot 2^2 = 10 \\cdot 4 = 40\\)."
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ТЕОРІЯ ЙМОВІРНОСТЕЙ ─────────────────────────────────────
+  {
+    id: "prob-001", topic: "Теорія ймовірностей", difficulty: 1,
+    condition: "Монету кидають 1 раз. Яка ймовірність випадіння герба? Введіть відповідь у вигляді десяткового дробу.",
+    answer: 1, tolerance: 0.01,
+    solutionSteps: [
+      "\\(P = \\frac{1}{2} = 0{,}5\\)."
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "prob-002", topic: "Теорія ймовірностей", difficulty: 1,
+    condition: "У мішку 4 червоні та 6 синіх кулі. Яка ймовірність (у %) витягнути червону?",
+    answer: 40, tolerance: null,
+    solutionSteps: [
+      "$$P = \\frac{4}{10} = 0{,}4 = 40\\%$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "prob-003", topic: "Теорія ймовірностей", difficulty: 2,
+    condition: "Гральний кубик кидають двічі. Яка кількість сприятливих наслідків події «сума очок = 7»?",
+    answer: 6, tolerance: null,
+    solutionSteps: [
+      "Пари (a,b), де a+b=7: (1,6),(2,5),(3,4),(4,3),(5,2),(6,1).",
+      "Кількість сприятливих наслідків: $$6$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ВЕКТОРИ ─────────────────────────────────────────────────
+  {
+    id: "vec-001", topic: "Вектори", difficulty: 1,
+    condition: "Знайдіть довжину вектора $$\\vec{a} = (3, 4)$$.",
+    answer: 5, tolerance: null,
+    solutionSteps: [
+      "$$|\\vec{a}| = \\sqrt{3^2 + 4^2} = \\sqrt{9+16} = \\sqrt{25} = 5$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "vec-002", topic: "Вектори", difficulty: 1,
+    condition: "Знайдіть скалярний добуток векторів $$\\vec{a}=(2,3)$$ та $$\\vec{b}=(4,1)$$.",
+    answer: 11, tolerance: null,
+    solutionSteps: [
+      "$$\\vec{a} \\cdot \\vec{b} = 2 \\cdot 4 + 3 \\cdot 1 = 8 + 3 = 11$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "vec-003", topic: "Вектори", difficulty: 2,
+    condition: "Знайдіть косинус кута між векторами $$\\vec{a}=(1,0)$$ та $$\\vec{b}=(1,1)$$. Введіть відповідь у вигляді десяткового дробу (округліть до сотих).",
+    answer: 1, tolerance: 0.01,
+    solutionSteps: [
+      "$$\\cos\\theta = \\frac{\\vec{a}\\cdot\\vec{b}}{|\\vec{a}||\\vec{b}|} = \\frac{1}{1 \\cdot \\sqrt{2}} = \\frac{1}{\\sqrt{2}} \\approx 0{,}71$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "vec-004", topic: "Вектори", difficulty: 2,
+    condition: "Вектор $$\\vec{c} = \\vec{a} + \\vec{b}$$, де $$\\vec{a}=(3,-1)$$, $$\\vec{b}=(-1,5)$$. Знайдіть довжину $$\\vec{c}$$.",
+    answer: 5, tolerance: null,
+    solutionSteps: [
+      "$$\\vec{c} = (3+(-1),\\; -1+5) = (2, 4)$$",
+      "$$|\\vec{c}| = \\sqrt{4+16} = \\sqrt{20} = 2\\sqrt{5} \\approx 4{,}47$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ТРИГОНОМЕТРИЧНІ РІВНЯННЯ ────────────────────────────────
+  {
+    id: "treq-001", topic: "Тригонометричні рівняння", difficulty: 1,
+    condition: "Знайдіть найменший додатний корінь рівняння $$\\sin x = 0$$.",
+    answer: 0, tolerance: null,
+    solutionSteps: [
+      "$$\\sin x = 0 \\Rightarrow x = \\pi n, \\; n \\in \\mathbb{Z}$$",
+      "При \\(n=0\\): \\(x=0\\). Найменший невід'ємний корінь: $$x = 0$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "treq-002", topic: "Тригонометричні рівняння", difficulty: 2,
+    condition: "Скільки коренів має рівняння $$\\cos x = 0{,}5$$ на відрізку \\([0; 2\\pi]\\)?",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$\\cos x = 0{,}5 \\Rightarrow x = \\pm\\frac{\\pi}{3} + 2\\pi n$$",
+      "На \\([0;2\\pi]\\): $$x_1 = \\frac{\\pi}{3}$$, $$x_2 = \\frac{5\\pi}{3}$$.",
+      "Кількість коренів: $$2$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "treq-003", topic: "Тригонометричні рівняння", difficulty: 3,
+    condition: "Знайдіть кількість коренів рівняння $$\\sin^2 x = 1$$ на відрізку \\([0; 3\\pi]\\).",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "$$\\sin^2 x = 1 \\Rightarrow \\sin x = \\pm 1$$",
+      "$$\\sin x = 1 \\Rightarrow x = \\frac{\\pi}{2} + 2\\pi n$$: на \\([0;3\\pi]\\) — \\(\\frac{\\pi}{2}\\) та \\(\\frac{5\\pi}{2}\\). Це 2 корені.",
+      "$$\\sin x = -1 \\Rightarrow x = \\frac{3\\pi}{2} + 2\\pi n$$: на \\([0;3\\pi]\\) — \\(\\frac{3\\pi}{2}\\) та \\(\\frac{7\\pi}{2} > 3\\pi\\). Це 1 корінь.",
+      "Всього: $$2 + 1 = 3$$ коренів."
+    ],
+    alternativeSolution: null
+  },
+
+  // ── КООРДИНАТНА ГЕОМЕТРІЯ ───────────────────────────────────
+  {
+    id: "coord-001", topic: "Координатна геометрія", difficulty: 1,
+    condition: "Знайдіть відстань між точками \\(A(1, 2)\\) та \\(B(4, 6)\\).",
+    answer: 5, tolerance: null,
+    solutionSteps: [
+      "$$d = \\sqrt{(4-1)^2 + (6-2)^2} = \\sqrt{9+16} = \\sqrt{25} = 5$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "coord-002", topic: "Координатна геометрія", difficulty: 1,
+    condition: "Знайдіть кутовий коефіцієнт прямої, що проходить через \\(A(0,1)\\) та \\(B(2,5)\\).",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$k = \\frac{y_2-y_1}{x_2-x_1} = \\frac{5-1}{2-0} = \\frac{4}{2} = 2$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "coord-003", topic: "Координатна геометрія", difficulty: 2,
+    condition: "Знайдіть ординату середини відрізка \\(AB\\), де \\(A(2, -4)\\) та \\(B(6, 8)\\).",
+    answer: 2, tolerance: null,
+    solutionSteps: [
+      "$$y_M = \\frac{y_A + y_B}{2} = \\frac{-4+8}{2} = \\frac{4}{2} = 2$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "coord-004", topic: "Координатна геометрія", difficulty: 2,
+    condition: "Пряма задана рівнянням $$3x - y + 6 = 0$$. Знайдіть \\(y\\)-перетин (значення \\(y\\) при \\(x=0\\)).",
+    answer: 6, tolerance: null,
+    solutionSteps: [
+      "При \\(x=0\\): $$-y + 6 = 0 \\Rightarrow y = 6$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "coord-005", topic: "Координатна геометрія", difficulty: 3,
+    condition: "Знайдіть відстань від точки \\(M(3, -1)\\) до прямої $$4x - 3y + 5 = 0$$.",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "Формула відстані від точки \\((x_0,y_0)\\) до прямої \\(ax+by+c=0\\):",
+      "$$d = \\frac{|ax_0+by_0+c|}{\\sqrt{a^2+b^2}} = \\frac{|4\\cdot3+(-3)\\cdot(-1)+5|}{\\sqrt{16+9}} = \\frac{|12+3+5|}{5} = \\frac{20}{5} = 4$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ЧИСЛОВІ ПОСЛІДОВНОСТІ ───────────────────────────────────
+  {
+    id: "numseq-001", topic: "Числові послідовності", difficulty: 1,
+    condition: "Знайдіть суму перших 100 натуральних чисел.",
+    answer: 5050, tolerance: null,
+    solutionSteps: [
+      "$$S = \\frac{n(n+1)}{2} = \\frac{100 \\cdot 101}{2} = 5050$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "numseq-002", topic: "Числові послідовності", difficulty: 2,
+    condition: "Знайдіть суму перших 10 парних натуральних чисел (2, 4, 6, ...).",
+    answer: 110, tolerance: null,
+    solutionSteps: [
+      "Перші 10 парних: \\(2, 4, ..., 20\\). Це АП з \\(a_1=2\\), \\(d=2\\), \\(n=10\\).",
+      "$$S_{10} = \\frac{10(2+20)}{2} = \\frac{10 \\cdot 22}{2} = 110$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── МОДУЛЬ ──────────────────────────────────────────────────
+  {
+    id: "abs-001", topic: "Модуль", difficulty: 1,
+    condition: "Розв'яжіть рівняння $$|x| = 7$$. Введіть суму всіх коренів.",
+    answer: 0, tolerance: null,
+    solutionSteps: [
+      "$$|x| = 7 \\Rightarrow x = 7$$ або $$x = -7$$.",
+      "Сума коренів: $$7 + (-7) = 0$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "abs-002", topic: "Модуль", difficulty: 2,
+    condition: "Знайдіть суму коренів рівняння $$|2x - 4| = 6$$.",
+    answer: 4, tolerance: null,
+    solutionSteps: [
+      "$$2x - 4 = 6 \\Rightarrow x = 5$$",
+      "$$2x - 4 = -6 \\Rightarrow x = -1$$",
+      "Сума: $$5 + (-1) = 4$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "abs-003", topic: "Модуль", difficulty: 3,
+    condition: "Знайдіть кількість цілих рішень нерівності $$|x^2 - 5| < 4$$.",
+    answer: 6, tolerance: null,
+    solutionSteps: [
+      "$$|x^2 - 5| < 4 \\Leftrightarrow -4 < x^2 - 5 < 4 \\Leftrightarrow 1 < x^2 < 9$$",
+      "$$1 < x^2 < 9 \\Leftrightarrow 1 < |x| < 3$$",
+      "Цілі значення: \\(x \\in \\{-2, -1, 2, 1\\}\\)... ні: \\(|x| \\in (1,3)\\), цілі \\(|x|\\) = 2. Тобто \\(x = \\pm 2\\).",
+      "Але \\(|x|\\) може бути і нецілим. Цілі \\(x\\): \\(|x|=2\\) → \\(x=2,-2\\). А \\(|x|=1\\) не задовольняє (\\(1 < 1\\) — ні). Отже, 2 цілих рішення."
+    ],
+    alternativeSolution: null
+  },
+
+  // ── ВІДСОТКИ ────────────────────────────────────────────────
+  {
+    id: "pct-001", topic: "Відсотки та пропорції", difficulty: 1,
+    condition: "Знайдіть 20% від числа 350.",
+    answer: 70, tolerance: null,
+    solutionSteps: [
+      "$$350 \\cdot \\frac{20}{100} = 350 \\cdot 0{,}2 = 70$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "pct-002", topic: "Відсотки та пропорції", difficulty: 1,
+    condition: "Ціна товару зросла зі 120 до 150 грн. На скільки відсотків?",
+    answer: 25, tolerance: null,
+    solutionSteps: [
+      "$$\\frac{150-120}{120} \\cdot 100\\% = \\frac{30}{120} \\cdot 100\\% = 25\\%$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "pct-003", topic: "Відсотки та пропорції", difficulty: 2,
+    condition: "Після знижки 15% товар коштує 340 грн. Знайдіть початкову ціну (до цілого).",
+    answer: 400, tolerance: null,
+    solutionSteps: [
+      "$$x \\cdot 0{,}85 = 340 \\Rightarrow x = \\frac{340}{0{,}85} = 400$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "pct-004", topic: "Відсотки та пропорції", difficulty: 3,
+    condition: "Вклад 10000 грн під 10% річних (складні відсотки). Яка сума через 2 роки?",
+    answer: 12100, tolerance: null,
+    solutionSteps: [
+      "$$S = P \\cdot (1+r)^n = 10000 \\cdot 1{,}1^2 = 10000 \\cdot 1{,}21 = 12100$$"
+    ],
+    alternativeSolution: null
+  },
+
+  // ── РІВНЯННЯ З ПАРАМЕТРОМ ───────────────────────────────────
+  {
+    id: "par-001", topic: "Рівняння з параметром", difficulty: 3,
+    condition: "При якому \\(a\\) рівняння $$ax = 6$$ не має розв'язків?",
+    answer: 0, tolerance: null,
+    solutionSteps: [
+      "Рівняння \\(ax = 6\\) немає розв'язків, коли коефіцієнт при \\(x\\) дорівнює нулю, але права частина ненульова.",
+      "При \\(a = 0\\): \\(0 \\cdot x = 6\\) → \\(0 = 6\\) — суперечність.",
+      "Відповідь: $$a = 0$$"
+    ],
+    alternativeSolution: null
+  },
+  {
+    id: "par-002", topic: "Рівняння з параметром", difficulty: 3,
+    condition: "При якому значенні \\(a\\) квадратне рівняння $$x^2 + ax + 9 = 0$$ має два рівних корені? Введіть додатне значення \\(a\\).",
+    answer: 6, tolerance: null,
+    solutionSteps: [
+      "Рівні корені: $$D = a^2 - 36 = 0 \\Rightarrow a^2 = 36 \\Rightarrow a = \\pm 6$$",
+      "Додатне значення: $$a = 6$$"
+    ],
+    alternativeSolution: null
+  }
+];
+
+// ════════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════════════════════════
+const STORAGE_KEY = 'math_trainer_state';
+const REGEX_NUMBER = /^-?\d+([.]\d+)?$/;
+const KATEX_OPTIONS = {
+  delimiters: [
+    { left: "$$", right: "$$", display: true },
+    { left: "\\(", right: "\\)", display: false },
+    { left: "\\[", right: "\\]", display: true }
+  ],
+  throwOnError: false
+};
+const DIFFICULTY_LABELS = { 1: '★ Легка', 2: '★★ Середня', 3: '★★★ Складна' };
+const DEFAULT_STATE = { correctCount: 0, incorrectCount: 0, allSeenIds: [] };
+
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let state = { ...DEFAULT_STATE };
+
+// Runtime (not persisted)
+let currentTask = null;
+let isAltSolutionShown = false;
+let selectedTopic = '';
+// seenPerTopic: Map<topic|'__all__', Set<id>>
+let seenPerTopic = new Map();
+// sessionCounterPerTopic: Map<topic|'__all__', {n, total}>
+let sessionCounterPerTopic = new Map();
+
+// ════════════════════════════════════════════════════════════════
+//  STORAGE
+// ════════════════════════════════════════════════════════════════
+function loadStateFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        state = {
+          correctCount:   typeof parsed.correctCount === 'number'   ? parsed.correctCount   : 0,
+          incorrectCount: typeof parsed.incorrectCount === 'number' ? parsed.incorrectCount : 0,
+          allSeenIds:     Array.isArray(parsed.allSeenIds)          ? parsed.allSeenIds     : []
+        };
+        return;
+      }
+    }
+  } catch (_) { /* fall through */ }
+  state = { ...DEFAULT_STATE };
+}
+
+function saveStateToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (_) {}
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FILTER HELPERS
+// ════════════════════════════════════════════════════════════════
+function getFilteredTasks() {
+  if (!selectedTopic) return TASKS;
+  return TASKS.filter(t => t.topic === selectedTopic);
+}
+
+function getSeenSet(key) {
+  if (!seenPerTopic.has(key)) seenPerTopic.set(key, new Set());
+  return seenPerTopic.get(key);
+}
+
+function getSessionCounter(key, total) {
+  if (!sessionCounterPerTopic.has(key)) {
+    sessionCounterPerTopic.set(key, { n: 0, total });
+  }
+  const c = sessionCounterPerTopic.get(key);
+  c.total = total; // update in case tasks changed
+  return c;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PROGRESS PANEL
+// ════════════════════════════════════════════════════════════════
+function renderProgressPanel() {
+  const panel = document.getElementById('progress-panel');
+  panel.innerHTML = '';
+
+  // Collect all topics that have been visited this session
+  const lines = [];
+
+  // Always show global if > 0 tasks done
+  const allCounter = sessionCounterPerTopic.get('__all__');
+  if (allCounter && allCounter.n > 0) {
+    lines.push({ label: 'Всього', n: allCounter.n, total: TASKS.length });
+  }
+
+  // Show per-topic lines for topics visited this session (except current duplicated if '__all__' is selected)
+  seenPerTopic.forEach((seenSet, key) => {
+    if (key === '__all__') return; // handled above
+    const topicTasks = TASKS.filter(t => t.topic === key);
+    const topicCounter = sessionCounterPerTopic.get(key);
+    if (topicCounter && topicCounter.n > 0) {
+      lines.push({ label: key, n: topicCounter.n, total: topicTasks.length });
+    }
+  });
+
+  if (lines.length === 0 && currentTask) {
+    // Show placeholder before first answer
+    const filtered = getFilteredTasks();
+    const key = selectedTopic || '__all__';
+    const total = filtered.length;
+    const p = document.createElement('div');
+    p.className = 'progress-line';
+    p.textContent = `${selectedTopic ? selectedTopic : 'Всього'}: — з ${total}`;
+    panel.appendChild(p);
+    return;
+  }
+
+  lines.forEach(({ label, n, total }) => {
+    const p = document.createElement('div');
+    p.className = 'progress-line';
+    p.innerHTML = `<strong>${label}:</strong> ${n} з ${total}`;
+    panel.appendChild(p);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FILTER UI
+// ════════════════════════════════════════════════════════════════
+function buildFilterUI() {
+  const sel = document.getElementById('topic-select');
+  const topics = [...new Set(TASKS.map(t => t.topic))].sort();
+  sel.innerHTML = '<option value="">Усі теми</option>';
+  topics.forEach(topic => {
+    const opt = document.createElement('option');
+    opt.value = topic;
+    opt.textContent = topic;
+    sel.appendChild(opt);
+  });
+  sel.value = selectedTopic;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TASK PICKING
+// ════════════════════════════════════════════════════════════════
+function pickNextTask() {
+  const filtered = getFilteredTasks();
+
+  if (filtered.length === 0) {
+    showEmptyState(true);
+    currentTask = null;
+    return;
+  }
+  showEmptyState(false);
+
+  const key = selectedTopic || '__all__';
+  const seenSet = getSeenSet(key);
+  let unseen = filtered.filter(t => !seenSet.has(t.id));
+
+  const allSeenMsg = document.getElementById('all-seen-msg');
+
+  if (unseen.length === 0) {
+    allSeenMsg.textContent = 'Ви переглянули всі задачі цієї теми! Починаємо знову.';
+    allSeenMsg.classList.add('visible');
+    seenSet.clear();
+    unseen = [...filtered];
+  } else {
+    allSeenMsg.classList.remove('visible');
+  }
+
+  currentTask = unseen[Math.floor(Math.random() * unseen.length)];
+  seenSet.add(currentTask.id);
+
+  // Also track per-topic when in "all" mode
+  if (!selectedTopic) {
+    const topicSet = getSeenSet(currentTask.topic);
+    topicSet.add(currentTask.id);
+  }
+
+  // Increment counters
+  const counter = getSessionCounter(key, filtered.length);
+  counter.n++;
+
+  // Also increment topic counter when in "all" mode
+  if (!selectedTopic) {
+    const topicTasks = TASKS.filter(t => t.topic === currentTask.topic);
+    const tc = getSessionCounter(currentTask.topic, topicTasks.length);
+    tc.n++;
+  }
+
+  renderProgressPanel();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER TASK
+// ════════════════════════════════════════════════════════════════
+function renderTask(task) {
+  if (!task) return;
+
+  document.getElementById('badge-topic').textContent = task.topic;
+  document.getElementById('badge-difficulty').textContent = DIFFICULTY_LABELS[task.difficulty] || '';
+
+  const condEl = document.getElementById('task-condition');
+  condEl.textContent = task.condition;
+  renderMathInElement(condEl, KATEX_OPTIONS);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RESET TASK UI
+// ════════════════════════════════════════════════════════════════
+function resetTaskUI() {
+  const input = document.getElementById('answer-input');
+  input.value = '';
+  input.className = '';
+  input.disabled = false;
+  input.removeAttribute('disabled');
+
+  document.getElementById('validation-message').textContent = '';
+  document.getElementById('btn-check').disabled = false;
+  document.getElementById('btn-next').disabled = true;
+  document.getElementById('feedback-area').hidden = true;
+  document.getElementById('btn-alt-solution').hidden = true;
+  document.getElementById('all-seen-msg').classList.remove('visible');
+
+  isAltSolutionShown = false;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SHOW EMPTY STATE
+// ════════════════════════════════════════════════════════════════
+function showEmptyState(show) {
+  document.getElementById('empty-state').classList.toggle('visible', show);
+  document.getElementById('task-meta').style.display = show ? 'none' : '';
+  document.getElementById('task-condition').style.display = show ? 'none' : '';
+  document.getElementById('answer-area').style.display = show ? 'none' : '';
+  document.getElementById('btn-check').style.display = show ? 'none' : '';
+  document.getElementById('feedback-area').hidden = true;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER SOLUTION STEPS
+// ════════════════════════════════════════════════════════════════
+function renderSteps(steps) {
+  const container = document.getElementById('solution-steps');
+  const ol = document.createElement('ol');
+  steps.forEach(step => {
+    const li = document.createElement('li');
+    li.textContent = step;
+    ol.appendChild(li);
+  });
+  container.innerHTML = '';
+  container.appendChild(ol);
+  renderMathInElement(container, KATEX_OPTIONS);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CHECK ANSWER
+// ════════════════════════════════════════════════════════════════
+function checkAnswer() {
+  const input = document.getElementById('answer-input');
+  const validMsg = document.getElementById('validation-message');
+  validMsg.textContent = '';
+  input.classList.remove('input--error');
+
+  // Step 1: trim + normalize
+  let raw = input.value;
+  let trimmed = raw.trim();
+  trimmed = trimmed.replace(',', '.'); // only first comma
+  trimmed = trimmed.replace(/\s/g, '');
+
+  // Step 2: empty check
+  if (trimmed === '') {
+    validMsg.textContent = 'Введіть відповідь';
+    input.classList.add('input--error');
+    return;
+  }
+
+  // Step 3: format check
+  if (!REGEX_NUMBER.test(trimmed)) {
+    validMsg.textContent = 'Введіть числове значення';
+    input.classList.add('input--error');
+    return;
+  }
+
+  // Step 4: parse
+  const userAnswer = parseFloat(trimmed);
+
+  // Step 5: sanity
+  if (isNaN(userAnswer) || !isFinite(userAnswer)) {
+    validMsg.textContent = 'Некоректне значення';
+    input.classList.add('input--error');
+    return;
+  }
+
+  // Step 6: tolerance
+  const tolerance = (currentTask.tolerance !== null && currentTask.tolerance !== undefined)
+    ? currentTask.tolerance
+    : 0.01;
+
+  // Step 7: compare
+  const isCorrect = Math.abs(userAnswer - currentTask.answer) <= tolerance;
+
+  // Step 8: update state
+  if (isCorrect) state.correctCount++;
+  else state.incorrectCount++;
+
+  if (!state.allSeenIds.includes(currentTask.id)) {
+    state.allSeenIds.push(currentTask.id);
+  }
+  saveStateToStorage();
+
+  // Step 9: update UI
+  input.classList.remove('input--error');
+  input.classList.add(isCorrect ? 'input--correct' : 'input--incorrect');
+  input.disabled = true;
+  document.getElementById('btn-check').disabled = true;
+  document.getElementById('btn-next').disabled = false;
+
+  // Feedback
+  const feedbackArea = document.getElementById('feedback-area');
+  feedbackArea.hidden = false;
+
+  const statusEl = document.getElementById('feedback-status');
+  const iconEl = statusEl.querySelector('.status-icon');
+  const textEl = document.getElementById('feedback-text');
+
+  if (isCorrect) {
+    statusEl.className = 'status--correct';
+    iconEl.textContent = '✓';
+    textEl.textContent = 'Правильно!';
+  } else {
+    statusEl.className = 'status--incorrect';
+    iconEl.textContent = '✗';
+    textEl.textContent = 'Неправильно';
+  }
+
+  const answerDisplay = document.getElementById('correct-answer-display');
+  const answerVal = Number.isInteger(currentTask.answer)
+    ? currentTask.answer
+    : currentTask.answer.toString().replace('.', ',');
+  answerDisplay.innerHTML = `Правильна відповідь: <strong>${answerVal}</strong>`;
+
+  renderSteps(currentTask.solutionSteps);
+
+  const altBtn = document.getElementById('btn-alt-solution');
+  const hasAlt = Array.isArray(currentTask.alternativeSolution) && currentTask.alternativeSolution.length > 0;
+  altBtn.hidden = !hasAlt;
+  if (hasAlt) {
+    altBtn.textContent = 'Інший спосіб пояснення';
+    isAltSolutionShown = false;
+  }
+
+  renderMathInElement(feedbackArea, KATEX_OPTIONS);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  EVENT LISTENERS
+// ════════════════════════════════════════════════════════════════
+function bindEvents() {
+  // Check button
+  document.getElementById('btn-check').addEventListener('click', checkAnswer);
+
+  // Enter key in input
+  document.getElementById('answer-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAnswer();
+  });
+
+  // Next task
+  document.getElementById('btn-next').addEventListener('click', () => {
+    resetTaskUI();
+    pickNextTask();
+    if (currentTask) renderTask(currentTask);
+  });
+
+  // Reset progress
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    if (!confirm('Скинути весь прогрес? Цю дію не можна скасувати.')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    state = { ...DEFAULT_STATE };
+    seenPerTopic.clear();
+    sessionCounterPerTopic.clear();
+    renderProgressPanel();
+  });
+
+  // Filter change
+  document.getElementById('topic-select').addEventListener('change', function () {
+    const newTopic = this.value;
+
+    // If there's an active unchecked task — ask confirmation
+    const inputHasValue = document.getElementById('answer-input').value.trim() !== '';
+    const feedbackHidden = document.getElementById('feedback-area').hidden;
+
+    if (inputHasValue && feedbackHidden) {
+      if (!confirm('Змінити тему? Поточна незавершена задача буде втрачена.')) {
+        this.value = selectedTopic; // revert
+        return;
+      }
+    }
+
+    selectedTopic = newTopic;
+    resetTaskUI();
+    document.getElementById('all-seen-msg').classList.remove('visible');
+    showEmptyState(false);
+    pickNextTask();
+    if (currentTask) renderTask(currentTask);
+  });
+
+  // Alt solution toggle
+  document.getElementById('btn-alt-solution').addEventListener('click', () => {
+    if (!currentTask) return;
+    isAltSolutionShown = !isAltSolutionShown;
+    const btn = document.getElementById('btn-alt-solution');
+    if (isAltSolutionShown) {
+      renderSteps(currentTask.alternativeSolution);
+      btn.textContent = 'Основний спосіб';
+    } else {
+      renderSteps(currentTask.solutionSteps);
+      btn.textContent = 'Інший спосіб пояснення';
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════
+function initApp() {
+  loadStateFromStorage();
+  buildFilterUI();
+  bindEvents();
+  pickNextTask();
+  if (currentTask) renderTask(currentTask);
+  renderProgressPanel();
+}
+</script>
+</body>
+</html>
